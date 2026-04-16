@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { validatePhoneNumber, detectUserLocation, LocationDetails } from '@/utils/location-service';
-import { AlertCircle, CheckCircle2, MapPin } from 'lucide-react';
+import { validatePhoneNumber, detectUserLocation } from '@/utils/location-service';
+import { AlertCircle, MapPin } from 'lucide-react';
 
 interface RegistrationStep1Props {
   onNext: (data: {
@@ -32,16 +32,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
   });
   const [purpose, setPurpose] = useState('');
   const [otherPurpose, setOtherPurpose] = useState('');
-
-  const [otpState, setOtpState] = useState({
-    phoneOtpSent: false,
-    phoneOtpVerified: false,
-    emailOtpSent: false,
-    emailOtpVerified: false,
-    phoneOtp: '',
-    emailOtp: '',
-  });
-
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
@@ -101,60 +91,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
       setErrors(prev => ({ ...prev, city: 'Failed to detect location. Please try again.' }));
       setIsLoading(false);
     }
-  };
-
-  const handleSendPhoneOtp = async () => {
-    if (!formData.phone.trim()) {
-      setErrors(prev => ({ ...prev, phone: 'Phone is required' }));
-      return;
-    }
-    if (!validatePhoneNumber(formData.phone)) {
-      setErrors(prev => ({ ...prev, phone: 'Phone must be 10 digits' }));
-      return;
-    }
-    setIsLoading(true);
-    // Simulate OTP send
-    setTimeout(() => {
-      setOtpState(prev => ({ ...prev, phoneOtpSent: true }));
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const handleVerifyPhoneOtp = () => {
-    if (otpState.phoneOtp.length !== 4) {
-      setErrors(prev => ({ ...prev, phoneOtp: 'OTP must be 4 digits' }));
-      return;
-    }
-    // Mock verification - in real app, verify with backend
-    setOtpState(prev => ({ ...prev, phoneOtpVerified: true }));
-    setErrors(prev => ({ ...prev, phoneOtp: '' }));
-  };
-
-  const handleSendEmailOtp = async () => {
-    if (!formData.email.trim()) {
-      setErrors(prev => ({ ...prev, email: 'Email is required' }));
-      return;
-    }
-    if (!formData.email.includes('@')) {
-      setErrors(prev => ({ ...prev, email: 'Invalid email format' }));
-      return;
-    }
-    setIsLoading(true);
-    // Simulate OTP send
-    setTimeout(() => {
-      setOtpState(prev => ({ ...prev, emailOtpSent: true }));
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const handleVerifyEmailOtp = () => {
-    if (otpState.emailOtp.length !== 4) {
-      setErrors(prev => ({ ...prev, emailOtp: 'OTP must be 4 digits' }));
-      return;
-    }
-    // Mock verification - in real app, verify with backend
-    setOtpState(prev => ({ ...prev, emailOtpVerified: true }));
-    setErrors(prev => ({ ...prev, emailOtp: '' }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -323,6 +259,19 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
               className="w-4 h-4"
             />
             <span className="font-medium">To match pet</span>
+          </label>
+
+          <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+            style={{ borderColor: purpose === 'sell' ? '#a855f7' : '#e5e7eb' }}>
+            <input
+              type="radio"
+              name="purpose"
+              value="sell"
+              checked={purpose === 'sell'}
+              onChange={(e) => setPurpose(e.target.value)}
+              className="w-4 h-4"
+            />
+            <span className="font-medium">To sell pet</span>
           </label>
 
           <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
