@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { dogBreeds, catBreeds } from '@/utils/mock-data';
 
 interface Pet {
   id: string;
+  name: string;
   species: string;
   breed: string;
   age: number;
@@ -28,6 +29,7 @@ interface PaymentDetails {
   accountHolder: string;
   accountNumber: string;
   ifscCode: string;
+  upiId: string;
 }
 
 export default function SellPetPage() {
@@ -39,9 +41,11 @@ export default function SellPetPage() {
     accountHolder: '',
     accountNumber: '',
     ifscCode: '',
+    upiId: '',
   });
   const [pets, setPets] = useState<Pet[]>([]);
   const [currentPet, setCurrentPet] = useState({
+    name: '',
     species: '',
     breed: '',
     age: '',
@@ -52,6 +56,47 @@ export default function SellPetPage() {
   const [petImage, setPetImage] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Load saved data from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPayment = localStorage.getItem('seller_payment_details');
+      const savedPets = localStorage.getItem('seller_pets');
+
+      if (savedPayment) {
+        try {
+          setPaymentDetails(JSON.parse(savedPayment));
+          setPaymentSubmitted(true);
+          setStep('pets');
+        } catch (e) {
+          console.error('[v0] Error loading payment details:', e);
+        }
+      }
+
+      if (savedPets) {
+        try {
+          setPets(JSON.parse(savedPets));
+        } catch (e) {
+          console.error('[v0] Error loading pets:', e);
+        }
+      }
+    }
+  }, []);
+
+  // Save payment details to localStorage
+  useEffect(() => {
+    if (paymentSubmitted && typeof window !== 'undefined') {
+      localStorage.setItem('seller_payment_details', JSON.stringify(paymentDetails));
+    }
+  }, [paymentDetails, paymentSubmitted]);
+
+  // Save pets to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('seller_pets', JSON.stringify(pets));
+    }
+  }, [pets]);
 
   if (!isLoggedIn) {
     return (
@@ -105,12 +150,15 @@ export default function SellPetPage() {
     if (!paymentDetails.accountHolder.trim()) newErrors.accountHolder = 'Account holder name is required';
     if (!paymentDetails.accountNumber.trim() || paymentDetails.accountNumber.length < 8) newErrors.accountNumber = 'Valid account number is required';
     if (!paymentDetails.ifscCode.trim() || paymentDetails.ifscCode.length !== 11) newErrors.ifscCode = 'Valid IFSC code required';
+    if (!paymentDetails.upiId.trim()) newErrors.upiId = 'UPI ID is required';
+    else if (!paymentDetails.upiId.includes('@')) newErrors.upiId = 'Valid UPI ID required (e.g., user@upi)';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validatePet = () => {
     const newErrors: Record<string, string> = {};
+    if (!currentPet.name.trim()) newErrors.name = 'Pet name is required';
     if (!currentPet.species) newErrors.species = 'Species is required';
     if (!currentPet.breed) newErrors.breed = 'Breed is required';
     if (!currentPet.age || isNaN(Number(currentPet.age))) newErrors.age = 'Valid age is required';
@@ -133,19 +181,23 @@ export default function SellPetPage() {
   const handleAddPet = (e: React.FormEvent) => {
     e.preventDefault();
     if (validatePet()) {
-      setPets([
-        ...pets,
-        {
-          id: `pet-${Date.now()}`,
-          ...currentPet,
-          age: Number(currentPet.age),
-          month: Number(currentPet.month),
-          image: petImage,
-        },
-      ]);
-      setCurrentPet({ species: '', breed: '', age: '', month: '', gender: '', price: '' });
+      const newPet: Pet = {
+        id: `pet-${Date.now()}`,
+        name: currentPet.name,
+        species: currentPet.species,
+        breed: currentPet.breed,
+        age: Number(currentPet.age),
+        month: Number(currentPet.month),
+        gender: currentPet.gender,
+        price: currentPet.price,
+        image: petImage,
+      };
+      setPets([...pets, newPet]);
+      setCurrentPet({ name: '', species: '', breed: '', age: '', month: '', gender: '', price: '' });
       setPetImage('');
       setErrors({});
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     }
   };
 
@@ -256,6 +308,17 @@ export default function SellPetPage() {
                       {errors.ifscCode && <p className="text-red-500 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" /> {errors.ifscCode}</p>}
                     </div>
 
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">UPI ID</label>
+                      <Input
+                        placeholder="Enter UPI ID (e.g., user@upi)"
+                        value={paymentDetails.upiId}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})}
+                        className={errors.upiId ? 'border-red-500' : ''}
+                      />
+                      {errors.upiId && <p className="text-red-500 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" /> {errors.upiId}</p>}
+                    </div>
+
                     <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
                       Continue to Pet Listings
                     </Button>
@@ -264,9 +327,30 @@ export default function SellPetPage() {
               ) : (
                 <>
                   <h2 className="text-2xl font-bold mb-6">Add Pet Listings</h2>
+
+                  {showSuccess && (
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-800">Pet Added Successfully!</p>
+                        <p className="text-xs text-green-700">You can add another pet or proceed to your dashboard.</p>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Current Pet Form */}
                   <form onSubmit={handleAddPet} className="space-y-4 mb-8 pb-8 border-b">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Pet Name</label>
+                      <Input
+                        placeholder="Enter pet name"
+                        value={currentPet.name}
+                        onChange={(e) => setCurrentPet({...currentPet, name: e.target.value})}
+                        className={errors.name ? 'border-red-500' : ''}
+                      />
+                      {errors.name && <p className="text-red-500 text-sm flex items-center gap-1"><AlertCircle className="w-4 h-4" /> {errors.name}</p>}
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">Species</label>
@@ -392,7 +476,8 @@ export default function SellPetPage() {
                               <Image src={pet.image} alt={pet.breed} fill className="object-cover" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-bold">{pet.species} - {pet.breed}</h4>
+                              <h4 className="font-bold text-lg">{pet.name}</h4>
+                              <p className="text-sm text-gray-600 mb-1">{pet.species} - {pet.breed}</p>
                               <p className="text-sm text-gray-600">{pet.age} years {pet.month} months • {pet.gender}</p>
                               <p className="text-lg font-bold text-purple-600 mt-2">₹{pet.price}</p>
                             </div>
