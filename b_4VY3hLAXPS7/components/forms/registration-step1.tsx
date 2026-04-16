@@ -327,64 +327,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         )}
       </div>
 
-      {/* Email with OTP */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium">Email (with OTP)</label>
-        <div className="flex gap-2">
-          <Input
-            type="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={(e) => {
-              setFormData(prev => ({ ...prev, email: e.target.value }));
-              setErrors(prev => ({ ...prev, email: '' }));
-            }}
-            disabled={otpState.emailOtpVerified}
-            className={errors.email ? 'border-red-500' : ''}
-          />
-          <Button
-            type="button"
-            onClick={handleSendEmailOtp}
-            disabled={otpState.emailOtpSent || otpState.emailOtpVerified || isLoading}
-            variant="outline"
-            className="whitespace-nowrap"
-          >
-            {otpState.emailOtpVerified ? 'Verified ✓' : otpState.emailOtpSent ? 'Resend' : 'Send OTP'}
-          </Button>
-        </div>
-
-        {otpState.emailOtpSent && !otpState.emailOtpVerified && (
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="4-digit OTP"
-              value={otpState.emailOtp}
-              onChange={(e) => setOtpState(prev => ({ ...prev, emailOtp: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-              maxLength={4}
-            />
-            <Button
-              type="button"
-              onClick={handleVerifyEmailOtp}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
-            >
-              Verify OTP
-            </Button>
-          </div>
-        )}
-
-        {otpState.emailOtpVerified && (
-          <p className="flex items-center gap-2 text-green-600 text-sm font-medium">
-            <CheckCircle2 className="w-4 h-4" /> Email verified
-          </p>
-        )}
-
-        {errors.email && (
-          <p className="flex items-center gap-1 text-red-500 text-sm">
-            <AlertCircle className="w-4 h-4" /> {errors.email}
-          </p>
-        )}
-      </div>
-
       {/* Purpose of Creating Account */}
       <div className="space-y-3">
         <label className="block text-sm font-medium">Purpose of Creating Account</label>
@@ -460,7 +402,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={!otpState.phoneOtpVerified || !otpState.emailOtpVerified}
         className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
       >
         Create Account
