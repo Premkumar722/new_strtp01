@@ -35,6 +35,7 @@ interface PaymentDetails {
 export default function SellPetPage() {
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState<'payment' | 'pets'>('payment');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     bankName: '',
@@ -60,7 +61,26 @@ export default function SellPetPage() {
 
   // Load saved data from localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    setIsLoading(false);
+  }, []);
+
+  // Save payment details to localStorage
+  useEffect(() => {
+    if (paymentSubmitted && typeof window !== 'undefined') {
+      localStorage.setItem('seller_payment_details', JSON.stringify(paymentDetails));
+    }
+  }, [paymentDetails, paymentSubmitted]);
+
+  // Save pets to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && pets.length > 0) {
+      localStorage.setItem('seller_pets', JSON.stringify(pets));
+    }
+  }, [pets]);
+
+  // Load data on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isLoggedIn && user) {
       const savedPayment = localStorage.getItem('seller_payment_details');
       const savedPets = localStorage.getItem('seller_pets');
 
@@ -82,21 +102,19 @@ export default function SellPetPage() {
         }
       }
     }
-  }, []);
+    setIsLoading(false);
+  }, [isLoggedIn, user]);
 
-  // Save payment details to localStorage
-  useEffect(() => {
-    if (paymentSubmitted && typeof window !== 'undefined') {
-      localStorage.setItem('seller_payment_details', JSON.stringify(paymentDetails));
-    }
-  }, [paymentDetails, paymentSubmitted]);
-
-  // Save pets to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('seller_pets', JSON.stringify(pets));
-    }
-  }, [pets]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (
