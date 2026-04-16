@@ -295,38 +295,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         )}
       </div>
 
-        {otpState.phoneOtpSent && !otpState.phoneOtpVerified && (
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="4-digit OTP"
-              value={otpState.phoneOtp}
-              onChange={(e) => setOtpState(prev => ({ ...prev, phoneOtp: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-              maxLength={4}
-            />
-            <Button
-              type="button"
-              onClick={handleVerifyPhoneOtp}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
-            >
-              Verify OTP
-            </Button>
-          </div>
-        )}
-
-        {otpState.phoneOtpVerified && (
-          <p className="flex items-center gap-2 text-green-600 text-sm font-medium">
-            <CheckCircle2 className="w-4 h-4" /> Phone verified
-          </p>
-        )}
-
-        {errors.phone && (
-          <p className="flex items-center gap-1 text-red-500 text-sm">
-            <AlertCircle className="w-4 h-4" /> {errors.phone}
-          </p>
-        )}
-      </div>
-
       {/* Purpose of Creating Account */}
       <div className="space-y-3">
         <label className="block text-sm font-medium">Purpose of Creating Account</label>
@@ -372,7 +340,7 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         </div>
 
         {purpose === 'other' && (
-                      <div className="hidden space-y-2">
+          <div className="space-y-2">
             <label className="block text-sm font-medium">Please describe your purpose</label>
             <textarea
               placeholder="Tell us why you're creating an account..."
