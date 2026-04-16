@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -31,6 +33,9 @@ interface PaymentDetails {
 }
 
 export default function SellPetPage() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState<'payment' | 'pets'>('payment');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     bankName: '',
@@ -57,6 +62,28 @@ export default function SellPetPage() {
   // Load saved data from localStorage on mount
   useEffect(() => {
     setIsLoading(false);
+    if (typeof window !== 'undefined') {
+      const savedPayment = localStorage.getItem('seller_payment_details');
+      const savedPets = localStorage.getItem('seller_pets');
+
+      if (savedPayment) {
+        try {
+          setPaymentDetails(JSON.parse(savedPayment));
+          setPaymentSubmitted(true);
+          setStep('pets');
+        } catch (e) {
+          console.error('[v0] Error loading payment details:', e);
+        }
+      }
+
+      if (savedPets) {
+        try {
+          setPets(JSON.parse(savedPets));
+        } catch (e) {
+          console.error('[v0] Error loading pets:', e);
+        }
+      }
+    }
   }, []);
 
   // Save payment details to localStorage
@@ -201,7 +228,42 @@ export default function SellPetPage() {
     }
   };
 
-  return (
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-white py-12 px-4">
+        <div className="max-w-md mx-auto">
+          <Button onClick={() => router.back()} variant="outline" className="mb-8">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back
+          </Button>
+          <div className="text-center py-20">
+            <h1 className="text-3xl font-bold mb-4">Login Required</h1>
+            <p className="text-gray-600 mb-4">You need to create an account to sell pets.</p>
+            <div className="space-y-3">
+              <Link href="/register" className="block">
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500">Create Account</Button>
+              </Link>
+              <Link href="/login" className="block">
+                <Button variant="outline" className="w-full">Login</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}

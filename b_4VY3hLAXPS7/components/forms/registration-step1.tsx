@@ -160,15 +160,6 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!otpState.phoneOtpVerified) {
-      setErrors(prev => ({ ...prev, phone: 'Please verify your phone number' }));
-      return;
-    }
-    if (!otpState.emailOtpVerified) {
-      setErrors(prev => ({ ...prev, email: 'Please verify your email' }));
-      return;
-    }
-
     if (validateForm()) {
       onNext(formData);
     }
@@ -264,33 +255,45 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         </div>
       )}
 
-      {/* Phone with OTP */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium">Phone Number (with OTP)</label>
-        <div className="flex gap-2">
-          <Input
-            type="tel"
-            placeholder="10-digit phone number"
-            value={formData.phone}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-              setFormData(prev => ({ ...prev, phone: value }));
-              setErrors(prev => ({ ...prev, phone: '' }));
-            }}
-            disabled={otpState.phoneOtpVerified}
-            maxLength={10}
-            className={errors.phone ? 'border-red-500' : ''}
-          />
-          <Button
-            type="button"
-            onClick={handleSendPhoneOtp}
-            disabled={otpState.phoneOtpSent || otpState.phoneOtpVerified || isLoading}
-            variant="outline"
-            className="whitespace-nowrap"
-          >
-            {otpState.phoneOtpVerified ? 'Verified ✓' : otpState.phoneOtpSent ? 'Resend' : 'Send OTP'}
-          </Button>
-        </div>
+      {/* Phone */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Phone</label>
+        <Input
+          type="tel"
+          placeholder="Enter your phone number"
+          value={formData.phone}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, phone: e.target.value }));
+            setErrors(prev => ({ ...prev, phone: '' }));
+          }}
+          className={errors.phone ? 'border-red-500' : ''}
+        />
+        {errors.phone && (
+          <p className="flex items-center gap-1 text-red-500 text-sm">
+            <AlertCircle className="w-4 h-4" /> {errors.phone}
+          </p>
+        )}
+      </div>
+
+      {/* Email */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Email</label>
+        <Input
+          type="email"
+          placeholder="Enter your email"
+          value={formData.email}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, email: e.target.value }));
+            setErrors(prev => ({ ...prev, email: '' }));
+          }}
+          className={errors.email ? 'border-red-500' : ''}
+        />
+        {errors.email && (
+          <p className="flex items-center gap-1 text-red-500 text-sm">
+            <AlertCircle className="w-4 h-4" /> {errors.email}
+          </p>
+        )}
+      </div>
 
         {otpState.phoneOtpSent && !otpState.phoneOtpVerified && (
           <div className="flex gap-2">
@@ -427,7 +430,7 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         </div>
 
         {purpose === 'other' && (
-          <div className="space-y-2">
+                      <div className="hidden space-y-2">
             <label className="block text-sm font-medium">Please describe your purpose</label>
             <textarea
               placeholder="Tell us why you're creating an account..."
