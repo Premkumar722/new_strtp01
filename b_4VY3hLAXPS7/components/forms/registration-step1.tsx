@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { validatePhoneNumber, detectUserLocation } from '@/utils/location-service';
-import { AlertCircle, MapPin } from 'lucide-react';
+import { AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
 
 interface RegistrationStep1Props {
   onNext: (data: {
@@ -36,6 +36,14 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [otpState, setOtpState] = useState({
+    phoneOtp: '',
+    phoneOtpSent: false,
+    phoneOtpVerified: false,
+    emailOtp: '',
+    emailOtpSent: false,
+    emailOtpVerified: false,
+  });
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -96,8 +104,53 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!otpState.phoneOtpVerified) {
+      setErrors(prev => ({ ...prev, phone: 'Please verify your phone number' }));
+      return;
+    }
+    if (!otpState.emailOtpVerified) {
+      setErrors(prev => ({ ...prev, email: 'Please verify your email' }));
+      return;
+    }
+
     if (validateForm()) {
       onNext(formData);
+    }
+  };
+
+  const handleSendPhoneOtp = () => {
+    if (!formData.phone.trim() || !validatePhoneNumber(formData.phone)) {
+      setErrors(prev => ({ ...prev, phone: 'Enter valid phone number' }));
+      return;
+    }
+    setOtpState(prev => ({ ...prev, phoneOtpSent: true }));
+    console.log('[v0] OTP sent to phone:', formData.phone);
+  };
+
+  const handleVerifyPhoneOtp = () => {
+    if (otpState.phoneOtp.length === 4) {
+      setOtpState(prev => ({ ...prev, phoneOtpVerified: true }));
+      setErrors(prev => ({ ...prev, phone: '' }));
+    } else {
+      setErrors(prev => ({ ...prev, phone: 'OTP must be 4 digits' }));
+    }
+  };
+
+  const handleSendEmailOtp = () => {
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setErrors(prev => ({ ...prev, email: 'Enter valid email' }));
+      return;
+    }
+    setOtpState(prev => ({ ...prev, emailOtpSent: true }));
+    console.log('[v0] OTP sent to email:', formData.email);
+  };
+
+  const handleVerifyEmailOtp = () => {
+    if (otpState.emailOtp.length === 4) {
+      setOtpState(prev => ({ ...prev, emailOtpVerified: true }));
+      setErrors(prev => ({ ...prev, email: '' }));
+    } else {
+      setErrors(prev => ({ ...prev, email: 'OTP must be 4 digits' }));
     }
   };
 
@@ -191,19 +244,57 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         </div>
       )}
 
-      {/* Phone */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Phone</label>
-        <Input
-          type="tel"
-          placeholder="Enter your phone number"
-          value={formData.phone}
-          onChange={(e) => {
-            setFormData(prev => ({ ...prev, phone: e.target.value }));
-            setErrors(prev => ({ ...prev, phone: '' }));
-          }}
-          className={errors.phone ? 'border-red-500' : ''}
-        />
+      {/* Phone with OTP */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium">Phone (with OTP Verification)</label>
+        <div className="flex gap-2">
+          <Input
+            type="tel"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, phone: e.target.value }));
+              setErrors(prev => ({ ...prev, phone: '' }));
+            }}
+            disabled={otpState.phoneOtpVerified}
+            className={errors.phone ? 'border-red-500' : ''}
+          />
+          <Button
+            type="button"
+            onClick={handleSendPhoneOtp}
+            disabled={otpState.phoneOtpSent || otpState.phoneOtpVerified}
+            variant="outline"
+            className="whitespace-nowrap"
+          >
+            {otpState.phoneOtpVerified ? 'Verified ✓' : otpState.phoneOtpSent ? 'Resend' : 'Send OTP'}
+          </Button>
+        </div>
+
+        {otpState.phoneOtpSent && !otpState.phoneOtpVerified && (
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="4-digit OTP"
+              value={otpState.phoneOtp}
+              onChange={(e) => setOtpState(prev => ({ ...prev, phoneOtp: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+              maxLength={4}
+            />
+            <Button
+              type="button"
+              onClick={handleVerifyPhoneOtp}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
+            >
+              Verify OTP
+            </Button>
+          </div>
+        )}
+
+        {otpState.phoneOtpVerified && (
+          <p className="flex items-center gap-2 text-green-600 text-sm font-medium">
+            <CheckCircle2 className="w-4 h-4" /> Phone verified
+          </p>
+        )}
+
         {errors.phone && (
           <p className="flex items-center gap-1 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4" /> {errors.phone}
@@ -211,19 +302,57 @@ export function RegistrationStep1({ onNext }: RegistrationStep1Props) {
         )}
       </div>
 
-      {/* Email */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Email</label>
-        <Input
-          type="email"
-          placeholder="Enter your email"
-          value={formData.email}
-          onChange={(e) => {
-            setFormData(prev => ({ ...prev, email: e.target.value }));
-            setErrors(prev => ({ ...prev, email: '' }));
-          }}
-          className={errors.email ? 'border-red-500' : ''}
-        />
+      {/* Email with OTP */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium">Email (with OTP Verification)</label>
+        <div className="flex gap-2">
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, email: e.target.value }));
+              setErrors(prev => ({ ...prev, email: '' }));
+            }}
+            disabled={otpState.emailOtpVerified}
+            className={errors.email ? 'border-red-500' : ''}
+          />
+          <Button
+            type="button"
+            onClick={handleSendEmailOtp}
+            disabled={otpState.emailOtpSent || otpState.emailOtpVerified}
+            variant="outline"
+            className="whitespace-nowrap"
+          >
+            {otpState.emailOtpVerified ? 'Verified ✓' : otpState.emailOtpSent ? 'Resend' : 'Send OTP'}
+          </Button>
+        </div>
+
+        {otpState.emailOtpSent && !otpState.emailOtpVerified && (
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="4-digit OTP"
+              value={otpState.emailOtp}
+              onChange={(e) => setOtpState(prev => ({ ...prev, emailOtp: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+              maxLength={4}
+            />
+            <Button
+              type="button"
+              onClick={handleVerifyEmailOtp}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
+            >
+              Verify OTP
+            </Button>
+          </div>
+        )}
+
+        {otpState.emailOtpVerified && (
+          <p className="flex items-center gap-2 text-green-600 text-sm font-medium">
+            <CheckCircle2 className="w-4 h-4" /> Email verified
+          </p>
+        )}
+
         {errors.email && (
           <p className="flex items-center gap-1 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4" /> {errors.email}

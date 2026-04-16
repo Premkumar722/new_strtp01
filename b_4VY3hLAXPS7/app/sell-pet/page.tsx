@@ -59,10 +59,14 @@ export default function SellPetPage() {
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Load saved data from localStorage on mount
+  // Check auth on mount
   useEffect(() => {
     setIsLoading(false);
-    if (typeof window !== 'undefined') {
+  }, []);
+
+  // Load data on mount when logged in
+  useEffect(() => {
+    if (isLoggedIn && typeof window !== 'undefined') {
       const savedPayment = localStorage.getItem('seller_payment_details');
       const savedPets = localStorage.getItem('seller_pets');
 
@@ -84,47 +88,7 @@ export default function SellPetPage() {
         }
       }
     }
-  }, []);
-
-  // Save payment details to localStorage
-  useEffect(() => {
-    if (paymentSubmitted && typeof window !== 'undefined') {
-      localStorage.setItem('seller_payment_details', JSON.stringify(paymentDetails));
-    }
-  }, [paymentDetails, paymentSubmitted]);
-
-  // Save pets to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && pets.length > 0) {
-      localStorage.setItem('seller_pets', JSON.stringify(pets));
-    }
-  }, [pets]);
-
-  // Load data on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPayment = localStorage.getItem('seller_payment_details');
-      const savedPets = localStorage.getItem('seller_pets');
-
-      if (savedPayment) {
-        try {
-          setPaymentDetails(JSON.parse(savedPayment));
-          setPaymentSubmitted(true);
-          setStep('pets');
-        } catch (e) {
-          console.error('[v0] Error loading payment details:', e);
-        }
-      }
-
-      if (savedPets) {
-        try {
-          setPets(JSON.parse(savedPets));
-        } catch (e) {
-          console.error('[v0] Error loading pets:', e);
-        }
-      }
-    }
-  }, []);
+  }, [isLoggedIn]);
 
   // Save payment details to localStorage
   useEffect(() => {
