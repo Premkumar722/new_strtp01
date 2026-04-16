@@ -7,14 +7,13 @@ import { useAuth } from '@/app/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, Home, MessageSquare, Plus, Search, MapPin, User } from 'lucide-react';
-import { validatePINCode, detectUserLocation } from '@/utils/location-service';
+import { detectUserLocation } from '@/utils/location-service';
 
 export function Navigation() {
   const { isLoggedIn, user, logout } = useAuth();
   const router = useRouter();
-  const [pin, setPin] = useState('');
-  const [address, setAddress] = useState('');
-  const [pinError, setPinError] = useState('');
+  const [city, setCity] = useState('');
+  const [cityError, setCityError] = useState('');
   const [detecting, setDetecting] = useState(false);
 
   const handleLogout = () => {
@@ -23,41 +22,48 @@ export function Navigation() {
   };
 
   const handleSearch = () => {
-    if (!pin.trim()) {
-      setPinError('PIN code is required');
+    if (!city.trim()) {
+      setCityError('City is required');
       return;
     }
 
-    if (!validatePINCode(pin)) {
-      setPinError('PIN code must be 6 digits');
-      return;
-    }
-
-    setPinError('');
+    setCityError('');
     // Search handled through local state
   };
 
-  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setPin(value);
-    setPinError('');
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCity(e.target.value);
+    setCityError('');
   };
 
   const handleDetectLocation = async () => {
     setDetecting(true);
     try {
-      const location = await detectUserLocation();
-      if (location) {
-        const fullAddress = `${location.area}, ${location.city}, ${location.state}`;
-        setAddress(fullAddress);
-        setPin('');
-        setPinError('');
-      } else {
-        setPinError('Unable to detect location');
+      if (!navigator.geolocation) {
+        setCityError('Geolocation not supported');
+        setDetecting(false);
+        return;
       }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const location = await detectUserLocation();
+          if (location) {
+            setCity(location.city);
+            setCityError('');
+          } else {
+            setCityError('Unable to detect location');
+          }
+          setDetecting(false);
+        },
+        () => {
+          setCityError('Unable to access location');
+          setDetecting(false);
+        }
+      );
     } catch (error) {
-      setPinError('Location detection failed');
-    } finally {
+      setCityError('Location detection failed');
       setDetecting(false);
     }
   };
@@ -75,43 +81,7 @@ export function Navigation() {
             <span className="font-bold text-xl hidden sm:inline">PetMatch</span>
           </Link>
 
-          {/* Search Bar - Center */}
-          <div className="flex-1 flex justify-center">
-            <div className="flex gap-2 max-w-sm w-full items-start">
-              <Button
-                onClick={handleDetectLocation}
-                disabled={detecting}
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap h-9"
-              >
-                <MapPin className="w-4 h-4" />
-              </Button>
-              <Input
-                type="text"
-                placeholder={address || "PIN code or address"}
-                value={address || pin}
-                onChange={(e) => {
-                  if (address) {
-                    setAddress('');
-                  } else {
-                    handlePinChange(e);
-                  }
-                }}
-                maxLength={address ? 50 : 6}
-                className={`text-sm h-9 ${pinError ? 'border-red-500' : ''}`}
-              />
-              <Button
-                onClick={handleSearch}
-                size="sm"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap h-9"
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
+          {/* Navigation Links - Center to Left */}
           <div className="flex items-center gap-4">
             {isLoggedIn && (
               <>
@@ -174,8 +144,36 @@ export function Navigation() {
               </Link>
             )}
           </div>
+
+          {/* Location Detection - Right Side Corner */}
+          <div className="flex gap-2 items-start ml-auto">
+            <Button
+              onClick={handleDetectLocation}
+              disabled={detecting}
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap h-9"
+              title="Detect location"
+            >
+              {detecting ? <span className="animate-spin">🔄</span> : <MapPin className="w-4 h-4" />}
+            </Button>
+            <Input
+              type="text"
+              placeholder="City"
+              value={city}
+              onChange={handleCityChange}
+              className={`text-sm h-9 w-24 ${cityError ? 'border-red-500' : ''}`}
+            />
+            <Button
+              onClick={handleSearch}
+              size="sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap h-9"
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-        {pinError && <p className="text-xs text-red-500 px-4 py-2">{pinError}</p>}
+        {cityError && <p className="text-xs text-red-500 px-4 py-2">{cityError}</p>}
       </div>
     </nav>
   );
