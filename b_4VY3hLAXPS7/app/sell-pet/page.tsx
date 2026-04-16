@@ -108,10 +108,15 @@ export default function SellPetPage() {
           </Button>
           <div className="text-center py-20">
             <h1 className="text-3xl font-bold mb-4">Login Required</h1>
-            <p className="text-gray-600 mb-8">You need to be logged in as a seller to list pets.</p>
-            <Link href="/login">
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500">Login</Button>
-            </Link>
+            <p className="text-gray-600 mb-4">You need to create a seller account to list pets.</p>
+            <div className="space-y-3">
+              <Link href="/register?type=seller" className="block">
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500">Create Seller Account</Button>
+              </Link>
+              <Link href="/login" className="block">
+                <Button variant="outline" className="w-full">Login</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -128,9 +133,9 @@ export default function SellPetPage() {
           </Button>
           <div className="text-center py-20">
             <h1 className="text-3xl font-bold mb-4">Seller Account Required</h1>
-            <p className="text-gray-600 mb-8">Only seller accounts can list pets for sale.</p>
-            <Link href="/">
-              <Button>Go to Home</Button>
+            <p className="text-gray-600 mb-8">Your account is not set up as a seller yet. You can update your account type from your profile settings.</p>
+            <Link href="/profile">
+              <Button>Go to Profile</Button>
             </Link>
           </div>
         </div>
