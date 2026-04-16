@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -33,9 +31,6 @@ interface PaymentDetails {
 }
 
 export default function SellPetPage() {
-  const router = useRouter();
-  const { isLoggedIn, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState<'payment' | 'pets'>('payment');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     bankName: '',
@@ -80,7 +75,7 @@ export default function SellPetPage() {
 
   // Load data on mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && isLoggedIn && user) {
+    if (typeof window !== 'undefined') {
       const savedPayment = localStorage.getItem('seller_payment_details');
       const savedPets = localStorage.getItem('seller_pets');
 
@@ -102,64 +97,21 @@ export default function SellPetPage() {
         }
       }
     }
-    setIsLoading(false);
-  }, [isLoggedIn, user]);
+  }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Save payment details to localStorage
+  useEffect(() => {
+    if (paymentSubmitted && typeof window !== 'undefined') {
+      localStorage.setItem('seller_payment_details', JSON.stringify(paymentDetails));
+    }
+  }, [paymentDetails, paymentSubmitted]);
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-white py-12 px-4">
-        <div className="max-w-md mx-auto">
-          <Button onClick={() => router.back()} variant="outline" className="mb-8">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
-          <div className="text-center py-20">
-            <h1 className="text-3xl font-bold mb-4">Login Required</h1>
-            <p className="text-gray-600 mb-4">You need to create a seller account to list pets.</p>
-            <div className="space-y-3">
-              <Link href="/register?type=seller" className="block">
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500">Create Seller Account</Button>
-              </Link>
-              <Link href="/login" className="block">
-                <Button variant="outline" className="w-full">Login</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (user?.userType !== 'sell') {
-    return (
-      <div className="min-h-screen bg-white py-12 px-4">
-        <div className="max-w-md mx-auto">
-          <Button onClick={() => router.back()} variant="outline" className="mb-8">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
-          <div className="text-center py-20">
-            <h1 className="text-3xl font-bold mb-4">Seller Account Required</h1>
-            <p className="text-gray-600 mb-8">Your account is not set up as a seller yet. You can update your account type from your profile settings.</p>
-            <Link href="/profile">
-              <Button>Go to Profile</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Save pets to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && pets.length > 0) {
+      localStorage.setItem('seller_pets', JSON.stringify(pets));
+    }
+  }, [pets]);
 
   const getBreeds = () => {
     if (currentPet.species === 'Dog') return dogBreeds;
