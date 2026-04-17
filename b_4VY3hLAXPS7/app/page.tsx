@@ -190,7 +190,7 @@ function HomeContent() {
               <div className="text-4xl mb-3">📍</div>
               <h3 className="font-bold text-lg mb-2">Location-Based Search</h3>
               <p className="text-gray-600 text-sm">
-                Find pets near you using the search bar in the navigation with location detection and PIN code.
+                Find pets near you using the city search in the navigation with one-click location detection.
               </p>
             </div>
           </div>

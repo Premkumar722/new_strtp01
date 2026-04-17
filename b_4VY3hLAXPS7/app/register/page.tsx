@@ -1,13 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
 import { RegistrationStep1 } from '@/components/forms/registration-step1';
 import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register } = useAuth();
+  const isSeller = searchParams.get('type') === 'seller';
 
   const handleRegistrationComplete = (data: {
     name: string;
@@ -21,9 +23,9 @@ export default function RegisterPage() {
   }) => {
     register({
       ...data,
-      userType: 'buyer',
+      userType: isSeller ? 'sell' : 'buyer',
     });
-    router.push('/');
+    router.push(isSeller ? '/sell-pet' : '/');
   };
 
   return (
